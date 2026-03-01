@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>アプリを起動中...</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>アプリを起動しています...</h2>
+    <p>自動的に起動しない場合は、下のボタンを押してください。</p>
+    <a id="launch-btn" href="#" class="btn">アプリを手動で起動</a>
+
+    <script>
+        // 1. 現在のURLからパラメータ（?id=123 等）を取得
+        var query = window.location.search;
+        // 2. カスタムスキーム URL を作成
+        var appUrl = "brainball://" + query;
+
+        // ボタンのリンク先を設定
+        document.getElementById('launch-btn').href = appUrl;
+
+        // 3. 自動実行：少し遅らせてアプリを呼び出す
+        window.onload = function() {
+            setTimeout(function() {
+                window.location.href = appUrl;
+            }, 500);
+        };
+    </script>
+</body>
+</html>
