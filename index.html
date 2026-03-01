@@ -2,32 +2,92 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>アプリを起動中...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アプリを起動しています - YourGameName</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+               display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f4f4f9; color: #333; }
+        .container { text-align: center; padding: 20px; max-width: 400px; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn { display: none; margin-top: 15px; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        .secondary-text { font-size: 0.9em; color: #666; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h2>アプリを起動しています...</h2>
-    <p>自動的に起動しない場合は、下のボタンを押してください。</p>
-    <a id="launch-btn" href="#" class="btn">アプリを手動で起動</a>
 
-    <script>
-        // 1. 現在のURLからパラメータ（?id=123 等）を取得
-        var query = window.location.search;
-        // 2. カスタムスキーム URL を作成
-        var appUrl = "brainball://" + query;
+<div class="container">
+    <h2 id="status-text">アプリを起動しています...</h2>
+    <div id="loader" class="loader"></div>
+    
+    <a id="download-btn" href="#" class="btn">アプリをダウンロード</a>
+    <a id="retry-btn" href="#" class="btn" style="background-color: #6c757d;">もう一度起動を試みる</a>
 
-        // ボタンのリンク先を設定
-        document.getElementById('launch-btn').href = appUrl;
+    <p class="secondary-text">
+        起動しない場合は、上のボタンをクリックしてください。
+    </p>
+</div>
 
-        // 3. 自動実行：少し遅らせてアプリを呼び出す
-        window.onload = function() {
-            setTimeout(function() {
-                window.location.href = appUrl;
-            }, 500);
-        };
-    </script>
+<script>
+    // --- 設定エリア ---
+    const CONFIG = {
+        scheme: "myapp", // Unity側で設定したスキーム
+        stores: {
+            windows: "https://your-game.itch.io/download", // Windows用DL先
+            android: "https://play.google.com/store/apps/details?id=com.your.package", // Playストア
+            fallback: "https://your-official-site.com" // その他（iOS等）
+        }
+    };
+
+    function getOS() {
+        const ua = navigator.userAgent;
+        if (/android/i.test(ua)) return "android";
+        if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return "ios";
+        if (/Win/i.test(ua)) return "windows";
+        return "other";
+    }
+
+    function launchApp() {
+        const params = window.location.search;
+        const appUrl = CONFIG.scheme + "://" + params;
+        const os = getOS();
+        const downloadBtn = document.getElementById('download-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const loader = document.getElementById('loader');
+        const statusText = document.getElementById('status-text');
+
+        // 1. アプリ起動を試みる
+        window.location.href = appUrl;
+
+        // 2. タイムアウト処理（アプリがインストールされていない場合の挙動）
+        // 2.5秒経ってもブラウザがバックグラウンドに回らなければ、ストアボタンを表示
+        const start = Date.now();
+        setTimeout(function() {
+            if (Date.now() - start < 3000) {
+                // ここに来る = まだこのページが見えている = 起動に失敗した可能性が高い
+                loader.style.display = "none";
+                statusText.innerText = "アプリは見つかりましたか？";
+                
+                // OSに応じたボタンの表示
+                downloadBtn.style.display = "inline-block";
+                retryBtn.style.display = "inline-block";
+                retryBtn.href = appUrl;
+
+                if (os === "windows") {
+                    downloadBtn.innerText = "Windows版をダウンロード (itch.io)";
+                    downloadBtn.href = CONFIG.stores.windows;
+                } else if (os === "android") {
+                    downloadBtn.innerText = "Google Playで確認";
+                    downloadBtn.href = CONFIG.stores.android;
+                } else {
+                    downloadBtn.innerText = "公式サイトへ";
+                    downloadBtn.href = CONFIG.stores.fallback;
+                }
+            }
+        }, 2500);
+    }
+
+    window.onload = launchApp;
+</script>
 </body>
 </html>
